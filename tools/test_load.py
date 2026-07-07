@@ -114,6 +114,7 @@ end
 local nodes = {}       -- "x,y,z" -> node table
 local metas = {}       -- "x,y,z" -> meta
 local objects = {}     -- live entity objects
+local drops = {}       -- itemstrings dropped via core.add_item
 local function poskey(p) return p.x .. "," .. p.y .. "," .. p.z end
 
 local registered_nodes, registered_entities, registered_lbms, registered_crafts = {}, {}, {}, {}
@@ -193,10 +194,21 @@ core = {
         if def.on_activate then luaentity:on_activate(staticdata or "") end
         return obj
     end,
+    add_item = function(pos, stack)
+        if type(stack) == "string" then stack = ItemStack(stack) end
+        if stack and not stack:is_empty() then
+            drops[#drops+1] = stack:get_name() .. " " .. stack:get_count()
+        end
+    end,
     log = function() end,
 }
 
--- ========== Mineclonia stubs ==========
+-- ========== game stubs (VoxeLibre-minimal surface) ==========
+-- NOTE: this mock exposes only the SMALLER (VoxeLibre) mcl_armor / mcl_util
+-- surface -- no has_piece, unequip, head_entity_equip/unequip,
+-- drop_item_stack or float_random. If init.lua loads and every scenario
+-- passes against this, it is compatible with both VoxeLibre and Mineclonia
+-- (whose API is a superset).
 local armor_calls = {}
 mcl_armor = {
     elements = {
@@ -207,27 +219,12 @@ mcl_armor = {
         armor_calls[#armor_calls+1] = "equip:" .. itemstack:get_name()
         return ItemStack()
     end,
-    unequip = function(obj, index)
-        armor_calls[#armor_calls+1] = "unequip:" .. index
-        return ItemStack()
-    end,
-    has_piece = function(obj, index)
-        local inv = obj:get_luaentity().inventory
-        return inv:get_stack("armor", index):get_name() ~= ""
+    on_unequip = function(itemstack, obj)
+        armor_calls[#armor_calls+1] = "unequip:" .. itemstack:get_name()
     end,
     update = function() end,
-    head_entity_equip = function() end,
-    head_entity_unequip = function() end,
 }
-local drops = {}
-mcl_util = {
-    drop_item_stack = function(pos, stack)
-        if stack and not stack:is_empty() then
-            drops[#drops+1] = stack:get_name() .. " " .. stack:get_count()
-        end
-    end,
-    float_random = function(a, b) return (a + b) / 2 end,
-}
+mcl_util = {}
 mcl_sounds = {node_sound_wood_defaults = function() return {} end}
 screwdriver = {ROTATE_FACE = 1, ROTATE_AXIS = 2}
 
@@ -345,10 +342,13 @@ check("took shield next", ret:get_name() == "mcl_shields:shield")
 check("offhand slot empty again", inv:get_stack("offhand", 1):is_empty())
 check("all item entities removed", live("armor_stand_arms:item_entity") == 0)
 
--- 7. empty hand again -> falls through to armor unequip path (no crash)
+-- 7. empty hand over a torso piece -> unequips it via mcl_armor.on_unequip
+inv:set_stack("armor", 3, ItemStack("mcl_armor:helmet_iron")) -- torso index = 3
 armor_calls = {}
 ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
-check("armor unequip attempted", armor_calls[1] and armor_calls[1]:match("^unequip:") ~= nil)
+check("took the armor piece", ret:get_name() == "mcl_armor:helmet_iron")
+check("armor slot cleared", inv:get_stack("armor", 3):is_empty())
+check("on_unequip fired", armor_calls[1] == "unequip:mcl_armor:helmet_iron")
 
 -- 8. helmet routes to mcl_armor.equip
 armor_calls = {}

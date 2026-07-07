@@ -137,6 +137,33 @@ local function remove_item_entities(pos)
 	end
 end
 
+-- Is there an armor piece in the given "armor" slot? (local so we work on
+-- both Mineclonia and VoxeLibre, which lacks mcl_armor.has_piece)
+local function stand_has_piece(pos, armor_index)
+	return not init_inventory(pos):get_stack("armor", armor_index):is_empty()
+end
+
+-- Take an armor piece off the stand and return it. Mirrors what
+-- mcl_armor.unequip does in Mineclonia, but VoxeLibre has no such function;
+-- both games do have mcl_armor.on_unequip (which also refreshes the visual).
+local function stand_unequip(pos, obj, armor_index)
+	local inv = init_inventory(pos)
+	local stack = inv:get_stack("armor", armor_index)
+	if stack and not stack:is_empty() then
+		inv:set_stack("armor", armor_index, "")
+		mcl_armor.on_unequip(stack, obj)
+	end
+	return stack
+end
+
+-- Drop a stack near the stand (core.add_item works on both games;
+-- mcl_util.drop_item_stack is Mineclonia-only)
+local function drop_stack(pos, stack)
+	if stack and not stack:is_empty() then
+		core.add_item(vector.offset(pos, math.random() - 0.5, 0, math.random() - 0.5), stack)
+	end
+end
+
 -- Drop everything on the ground when the stand got destroyed
 local function drop_inventory(pos)
 	local inv = core.get_meta(pos):get_inventory()
@@ -144,10 +171,7 @@ local function drop_inventory(pos)
 		local list = inv:get_list(listname)
 		if list then
 			for _, stack in pairs(list) do
-				mcl_util.drop_item_stack(
-					vector.offset(pos, mcl_util.float_random(-0.5, 0.5), 0, mcl_util.float_random(-0.5, 0.5)),
-					stack
-				)
+				drop_stack(pos, stack)
 			end
 		end
 	end
@@ -229,7 +253,7 @@ core.register_node(NODE_NAME, {
 			-- (weapon first, then shield) if there is one; otherwise
 			-- try again from the bottom with more margins to find a
 			-- piece in a location that would otherwise be covered.
-			if not mcl_armor.has_piece(stand_entity, pointed_piece_index) then
+			if not stand_has_piece(pos, pointed_piece_index) then
 				for _, slot in ipairs(HAND_ORDER) do
 					local held = inv:get_stack(HANDS[slot].list, 1)
 					if not held:is_empty() then
@@ -251,7 +275,7 @@ core.register_node(NODE_NAME, {
 			end
 
 			if pointed_piece_index then
-				return mcl_armor.unequip(stand_entity, pointed_piece_index)
+				return stand_unequip(pos, stand_entity, pointed_piece_index)
 			end
 		end
 
@@ -304,7 +328,10 @@ core.register_entity("armor_stand_arms:armor_entity", {
 		self.object:set_armor_groups({immortal = 1})
 		self.node_pos = vector.round(self.object:get_pos())
 		self.inventory = init_inventory(self.node_pos)
-		mcl_armor.head_entity_equip(self.object)
+		-- Mineclonia-only: renders 3D mob heads worn as armor
+		if mcl_armor.head_entity_equip then
+			mcl_armor.head_entity_equip(self.object)
+		end
 		mcl_armor.update(self.object)
 	end,
 	on_step = function(self)
@@ -313,7 +340,9 @@ core.register_entity("armor_stand_arms:armor_entity", {
 		end
 	end,
 	on_deactivate = function(self, _)
-		mcl_armor.head_entity_unequip(self.object)
+		if mcl_armor.head_entity_unequip then
+			mcl_armor.head_entity_unequip(self.object)
+		end
 	end,
 	update_armor = function(self, info)
 		self.object:set_properties({textures = {info.texture}})

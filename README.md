@@ -2,7 +2,9 @@
 
 An armor stand that has **arms** — so it can show off your armor **and** hold
 a **weapon** in one hand and a **shield** in the other. A mod for
-[Mineclonia](https://content.luanti.org/packages/ryvnf/mineclonia/).
+[Mineclonia](https://content.luanti.org/packages/ryvnf/mineclonia/) and
+[VoxeLibre](https://content.luanti.org/packages/Wuzzy/mineclone2/) (formerly
+MineClone2).
 
 It works just like the normal armor stand you already know, but now your
 gear has somewhere to pose. Set up a knight by the door, show off your best
@@ -11,7 +13,7 @@ weapon.
 
 ## How to craft it
 
-Put **8 sticks** around a **Smooth Stone Slab** in the crafting table:
+Put **8 sticks** around a **smooth stone slab** in the crafting table:
 
 ```
 Stick   Stick   Stick
@@ -19,8 +21,10 @@ Stick   Stick   Stick
 Stick   Slab    Stick
 ```
 
-(That is the same recipe as the normal armor stand, just with extra sticks
-down the sides to make the arms.)
+The slab is the same one used to craft the normal armor stand — the "Smooth
+Stone Slab" in Mineclonia, or the "Polished Stone Slab" in VoxeLibre. In
+short: this is the normal armor stand recipe, plus extra sticks down the
+sides to make the arms.
 
 ## How to use it
 
@@ -41,14 +45,15 @@ down the sides to make the arms.)
 
 ## Requirements
 
-Made for **Mineclonia**. It needs the game's own armor stand mod
-(`mcl_armor_stand`) to be present, which it always is in Mineclonia.
+Made for **Mineclonia** and **VoxeLibre**. It uses the game's own armor
+stand mod (`mcl_armor_stand`) for the body model, which both games include
+by default, so there is nothing extra to install.
 
 ## Credits & license
 
-This mod is based on Mineclonia's built-in armor stand by **Stuart Jones**
-(stujones11). The stand model and icon are extended versions of Mineclonia's
-originals.
+This mod is based on the built-in armor stand by **Stuart Jones**
+(stujones11) that ships with both Mineclonia and VoxeLibre. The stand model
+and icon are extended versions of that mod's originals.
 
 - Code: **LGPL 2.1 or later**
 - Models & textures: **CC BY-SA 3.0**
@@ -59,9 +64,9 @@ See [LICENSE.txt](LICENSE.txt) for the full details.
 
 ### For modders
 
-The extra arms on the model and the inventory icon are generated from
-Mineclonia's own files by the scripts in `tools/`, so they always match the
-game's art:
+The extra arms on the model and the inventory icon are generated from the
+game's own armor stand art by the scripts in `tools/`, so they always match
+it (the stand model is the same in Mineclonia and VoxeLibre):
 
 - `tools/gen_mesh.py` — adds the two arms to Mineclonia's armor stand model.
 - `tools/gen_icon.py` — adds the arms to Mineclonia's stand icon.
