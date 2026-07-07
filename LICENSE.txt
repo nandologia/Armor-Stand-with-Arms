@@ -1,0 +1,45 @@
+Armor Stand with Arms
+=====================
+
+This mod is a derivative of the "3d Armor Stand" mod (mcl_armor_stand) that
+ships with Mineclonia, originally by Stuart Jones (stujones11).
+
+Modifications for this mod Copyright (C) 2026 nandologia.
+Original armor stand Copyright (C) 2013 Stuart Jones.
+
+
+Source code
+-----------
+License: LGPL 2.1 or later
+
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 2.1 of the License, or (at
+    your option) any later version.
+
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+    General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program; if not, see <https://www.gnu.org/licenses/>.
+
+Applies to: init.lua and the scripts in tools/.
+
+
+Models and textures
+--------------------
+License: CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)
+
+    models/armor_stand_arms.obj
+    textures/armor_stand_arms_item.png
+
+These are extended versions of Mineclonia's armor stand model
+(3d_armor_stand.obj) and inventory icon (3d_armor_stand_item.png), which are
+themselves licensed CC BY-SA 3.0 by Stuart Jones. The arms were added on top
+of the original art.
+
+At runtime the mod also displays Mineclonia's own armor-stand body model
+(3d_armor_entity.obj); that file is provided by Mineclonia and is not
+redistributed here.
