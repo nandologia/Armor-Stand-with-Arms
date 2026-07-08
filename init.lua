@@ -11,14 +11,22 @@ local NODE_NAME = "armor_stand_arms:armor_stand"
 -- back onto its own node.
 --
 --   main = weapon arm = the stand's right hand (tilted forward); accepts
---                       weapons only (shields excluded).
+--                       melee weapons only (shields and ranged weapons
+--                       excluded).
 --   off  = shield arm = the stand's left hand; accepts shields only.
+--
+-- Ranged/charge weapons (bows, crossbows, spears, tridents: group
+-- weapon_ranged) are excluded on purpose. They use controls.register_on_hold
+-- / register_on_release to track a right-mouse charge-and-release action on
+-- the player's currently wielded item; taking the item out of the player's
+-- hand mid-click (as putting it in the stand does) desyncs that tracking
+-- and can error. Melee weapons have no such hold state, so they're safe.
 local HANDS = {
 	main = {
 		list = "hand",
 		accept = function(def)
 			local g = def and def.groups or {}
-			return (g.weapon or 0) > 0 and (g.shield or 0) == 0
+			return (g.weapon or 0) > 0 and (g.shield or 0) == 0 and (g.weapon_ranged or 0) == 0
 		end,
 		offset = vector.new(-0.3275, 0.5475, -0.39),
 		rotation = vector.new(-math.pi / 12, -math.pi / 2, 0),

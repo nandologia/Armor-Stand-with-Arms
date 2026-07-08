@@ -57,6 +57,11 @@ local registered_items = {
     ["mcl_shields:shield"] = {groups = {shield = 1, weapon = 2}},
     ["mcl_armor:helmet_iron"] = {_mcl_armor_element = "head"},
     ["mcl_core:apple"] = {groups = {food = 2}},
+    -- ranged/charge weapons must be REJECTED: they use
+    -- controls.register_on_hold/on_release to track a right-mouse charge
+    -- on the player's wielded item, which taking it away mid-click desyncs
+    ["mcl_bows:bow"] = {groups = {weapon = 1, weapon_ranged = 1, bow = 1}},
+    ["vl_weaponry:spear_iron"] = {groups = {weapon = 1, weapon_ranged = 1, spear = 1}},
 }
 local StackMeta
 local function ItemStack(init)
@@ -306,6 +311,22 @@ player._wielded = ItemStack("mcl_core:apple")
 ret = nodedef.on_rightclick(pos, node, player, ItemStack("mcl_core:apple"), pt)
 check("apple rejected (returned unchanged)", ret:get_name() == "mcl_core:apple")
 check("hand still holds the sword", inv:get_stack("hand", 1):get_name() == "mcl_tools:sword_iron")
+
+-- 2b. ranged/charge weapons (bow, spear) are REJECTED too, even though
+-- they carry the weapon group -- taking them mid-click would desync their
+-- own RMB charge-and-release tracking (this was a real in-game crash)
+player._wielded = ItemStack("mcl_bows:bow")
+ret = nodedef.on_rightclick(pos, node, player, ItemStack("mcl_bows:bow"), pt)
+check("bow rejected (returned unchanged)", ret:get_name() == "mcl_bows:bow")
+check("hand still holds the sword after bow attempt",
+    inv:get_stack("hand", 1):get_name() == "mcl_tools:sword_iron")
+check("no second item entity spawned for the bow", live("armor_stand_arms:item_entity") == 1)
+
+player._wielded = ItemStack("vl_weaponry:spear_iron")
+ret = nodedef.on_rightclick(pos, node, player, ItemStack("vl_weaponry:spear_iron"), pt)
+check("spear rejected (returned unchanged)", ret:get_name() == "vl_weaponry:spear_iron")
+check("hand still holds the sword after spear attempt",
+    inv:get_stack("hand", 1):get_name() == "mcl_tools:sword_iron")
 
 -- 3. shield -> goes into the OFF hand, second entity spawns
 player._wielded = ItemStack("mcl_shields:shield")
