@@ -126,11 +126,17 @@ local registered_nodes, registered_entities, registered_lbms, registered_crafts 
 
 local face_pos_y = 0.5 -- what pointed_thing_to_face_pos reports (test-tunable)
 
+-- This harness simulates running under VoxeLibre: vl_weaponry (spears) is
+-- present, matching how the mod detects IS_VOXELIBRE at load time.
+local INSTALLED_MODS = {vl_weaponry = true}
+
 core = {
     get_current_modname = function() return "armor_stand_arms" end,
     get_translator = function() return function(s) return s end end,
+    get_modpath = function(name) return INSTALLED_MODS[name] and ("/mods/" .. name) or nil end,
     register_node = function(name, def) registered_nodes[name] = def end,
     register_entity = function(name, def) registered_entities[name] = def end,
+    register_craftitem = function(name, def) registered_items[name] = def end,
     register_lbm = function(def) registered_lbms[#registered_lbms+1] = def end,
     register_craft = function(def) registered_crafts[#registered_crafts+1] = def end,
     get_node = function(pos)
@@ -241,6 +247,7 @@ local nodedef = registered_nodes[NODE]
 check("node registered", nodedef ~= nil)
 check("armor entity registered", registered_entities["armor_stand_arms:armor_entity"] ~= nil)
 check("item entity registered", registered_entities["armor_stand_arms:item_entity"] ~= nil)
+check("shield display craftitem registered", registered_items["armor_stand_arms:shield_display"] ~= nil)
 check("craft registered", #registered_crafts == 1)
 check("recipe is 7 sticks + slab", (function()
     local r = registered_crafts[1].recipe
@@ -336,7 +343,11 @@ check("shield returns empty", ret:is_empty())
 check("two item entities now", live("armor_stand_arms:item_entity") == 2)
 local shield_obj = item_entity_for("off")
 check("shield entity is in the off slot", shield_obj ~= nil)
-check("shield entity shows the shield", shield_obj._properties.textures[1] == "mcl_shields:shield")
+-- the actual item is stored in the inventory (checked above), but under
+-- VoxeLibre the DISPLAYED texture is the bundled rectangular icon instead
+-- of the real shield's own (skewed) icon -- see IS_VOXELIBRE in init.lua
+check("shield entity shows the VoxeLibre display icon, not the raw shield",
+    shield_obj._properties.textures[1] == "armor_stand_arms:shield_display")
 check("weapon and shield on opposite arms (mirrored x)",
     (sword_obj._pos.x - pos.x) * (shield_obj._pos.x - pos.x) < 0)
 
@@ -384,6 +395,10 @@ for _, o in ipairs(objects) do o._removed = true end
 registered_lbms[1].action(pos, node)
 check("LBM respawns stand entity", live("armor_stand_arms:armor_entity") == 1)
 check("LBM respawns both item entities", live("armor_stand_arms:item_entity") == 2)
+check("LBM-respawned shield also shows the display icon (on_activate path)",
+    item_entity_for("off")._properties.textures[1] == "armor_stand_arms:shield_display")
+check("LBM-respawned weapon still shows the raw item",
+    item_entity_for("main")._properties.textures[1] == "mcl_tools:sword_iron")
 
 -- 10. dig: drops armor + weapon + shield
 inv:set_stack("armor", 2, ItemStack("mcl_armor:helmet_iron"))

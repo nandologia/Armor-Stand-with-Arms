@@ -34,12 +34,18 @@ License: CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)
 
     models/armor_stand_arms.obj
     textures/armor_stand_arms_item.png
+    textures/armor_stand_arms_shield.png
 
-These are extended versions of Mineclonia's armor stand model
-(3d_armor_stand.obj) and inventory icon (3d_armor_stand_item.png), which are
-themselves licensed CC BY-SA 3.0 by Stuart Jones. The arms were added on top
-of the original art.
+The model and item icon are extended versions of Mineclonia's armor stand
+model (3d_armor_stand.obj) and inventory icon (3d_armor_stand_item.png),
+which are themselves licensed CC BY-SA 3.0 by Stuart Jones. The arms were
+added on top of the original art.
+
+armor_stand_arms_shield.png is an unmodified copy of Mineclonia's shield
+icon (mcl_shields:mcl_shield_48.png), also CC BY-SA 3.0. It is shown on
+VoxeLibre stands in place of that game's own shield icon, which is drawn at
+an angle and looks skewed when displayed flat on the stand's arm.
 
 At runtime the mod also displays Mineclonia's own armor-stand body model
-(3d_armor_entity.obj); that file is provided by Mineclonia and is not
-redistributed here.
+(3d_armor_entity.obj); that file is provided by Mineclonia/VoxeLibre and is
+not redistributed here.

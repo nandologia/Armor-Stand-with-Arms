@@ -2,6 +2,19 @@ local S = core.get_translator(core.get_current_modname())
 
 local NODE_NAME = "armor_stand_arms:armor_stand"
 
+-- VoxeLibre's shield icon is drawn at a stylized angle rather than as a
+-- plain rectangle, which looks skewed when shown flat on the stand's arm.
+-- vl_weaponry only exists in VoxeLibre (it adds spears), so it's used here
+-- as a reliable marker to tell the two games apart.
+local IS_VOXELIBRE = core.get_modpath("vl_weaponry") ~= nil
+local SHIELD_DISPLAY_ITEM = "armor_stand_arms:shield_display"
+
+core.register_craftitem(SHIELD_DISPLAY_ITEM, {
+	description = S("Shield (display)"),
+	inventory_image = "armor_stand_arms_shield.png",
+	groups = {not_in_creative_inventory = 1},
+})
+
 -- Per-hand display + acceptance config.
 --
 -- Offsets are in the entity-yaw frame. The mesh importer mirrors X, so a
@@ -103,6 +116,16 @@ local function item_staticdata(slot, pos)
 	return slot .. " " .. core.pos_to_string(vector.round(pos))
 end
 
+-- Which item name to actually render for a slot's stack. Normally the
+-- stack's own item, but on VoxeLibre the shield slot always shows the
+-- bundled display item instead (see IS_VOXELIBRE above).
+local function display_item_name(slot, stack)
+	if slot == "off" and IS_VOXELIBRE then
+		return SHIELD_DISPLAY_ITEM
+	end
+	return stack:get_name()
+end
+
 -- Sync one slot's wielditem entity with its inventory list
 local function update_slot_display(pos, node, slot)
 	node = node or core.get_node(pos)
@@ -123,7 +146,7 @@ local function update_slot_display(pos, node, slot)
 			return
 		end
 	end
-	entity:set_item(stack:get_name())
+	entity:set_item(display_item_name(slot, stack))
 	entity:update_pose(node)
 end
 
@@ -395,7 +418,7 @@ core.register_entity("armor_stand_arms:item_entity", {
 			return
 		end
 		self.object:set_properties({visual_size = {x = hand.scale, y = hand.scale}})
-		self:set_item(stack:get_name())
+		self:set_item(display_item_name(self.slot, stack))
 		self:update_pose(node)
 	end,
 	on_step = function(self)

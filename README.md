@@ -70,10 +70,13 @@ it (the stand model is the same in Mineclonia and VoxeLibre):
 
 - `tools/gen_mesh.py` — adds the two arms to Mineclonia's armor stand model.
 - `tools/gen_icon.py` — adds the arms to Mineclonia's stand icon.
+- `tools/gen_shield_texture.py` — copies Mineclonia's flat shield icon,
+  used in place of VoxeLibre's own shield icon (which is drawn at an angle
+  and looks skewed when shown flat on the stand's arm).
 - `tools/test_load.py` — loads `init.lua` under a stub API (via `lupa`) and
   checks the placing/taking/rotating/dropping logic without launching the
   game.
 
 Re-run the `gen_*` scripts after a Mineclonia update if the game ever
-changes its armor stand model or icon. The weapon and shield positions live
-in the `HANDS` table at the top of `init.lua`.
+changes its armor stand model, icon, or shield icon. The weapon and shield
+positions live in the `HANDS` table at the top of `init.lua`.
