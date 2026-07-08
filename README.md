@@ -6,6 +6,10 @@ a **weapon** in one hand and a **shield** in the other. A mod for
 [VoxeLibre](https://content.luanti.org/packages/Wuzzy/mineclone2/) (formerly
 MineClone2).
 
+> **Playing Minetest Game instead?** This version won't load there — get the
+> separate **Armor Stand with Arms (Minetest Game)** mod
+> (`armor_stand_arms_mtg`), built for Minetest Game with the 3d_armor mod.
+
 It works just like the normal armor stand you already know, but now your
 gear has somewhere to pose. Set up a knight by the door, show off your best
 sword, or build a little armory room where every stand holds a different
