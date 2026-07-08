@@ -259,7 +259,6 @@ check("node registered", nodedef ~= nil)
 check("armor entity registered", registered_entities["armor_stand_arms:armor_entity"] ~= nil)
 check("item entity registered", registered_entities["armor_stand_arms:item_entity"] ~= nil)
 check("shield display craftitem registered", registered_items["armor_stand_arms:shield_display"] ~= nil)
-check("trident display craftitem registered", registered_items["armor_stand_arms:trident_display"] ~= nil)
 check("craft registered", #registered_crafts == 1)
 check("recipe is 7 sticks + slab", (function()
     local r = registered_crafts[1].recipe
@@ -347,8 +346,9 @@ check("spear rejected (returned unchanged)", ret:get_name() == "vl_weaponry:spea
 check("hand still holds the sword after spear attempt",
     inv:get_stack("hand", 1):get_name() == "mcl_tools:sword_iron")
 
--- 2c. a trident IS accepted even though it carries weapon_ranged, and on
--- VoxeLibre it displays via the bundled upright trident image
+-- 2c. a trident IS accepted even though it carries weapon_ranged, and it
+-- displays with its own item art (no substitution -- VoxeLibre's own blue
+-- trident, at the normal weapon size)
 inv:set_stack("hand", 1, "")
 update_all_displays_via_lbm = registered_lbms[1]
 update_all_displays_via_lbm.action(pos, node)
@@ -358,8 +358,10 @@ check("VoxeLibre trident accepted into the weapon hand",
     inv:get_stack("hand", 1):get_name() == "vl_tridents:trident")
 check("trident returns empty (swap of an empty hand)", ret:is_empty())
 local trident_obj = item_entity_for("main")
-check("trident shows the upright display image, not the raw item",
-    trident_obj._properties.textures[1] == "armor_stand_arms:trident_display")
+check("trident shows its own item art, not a substitute",
+    trident_obj._properties.textures[1] == "vl_tridents:trident")
+check("trident rendered at the normal weapon size (no VoxeLibre boost)",
+    math.abs(trident_obj._properties.visual_size.x - 0.27) < 1e-9)
 -- reset the hand back to the sword for the scenarios that follow
 inv:set_stack("hand", 1, ItemStack("mcl_tools:sword_iron"))
 update_all_displays_via_lbm.action(pos, node)

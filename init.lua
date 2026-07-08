@@ -8,21 +8,10 @@ local NODE_NAME = "armor_stand_arms:armor_stand"
 -- as a reliable marker to tell the two games apart.
 local IS_VOXELIBRE = core.get_modpath("vl_weaponry") ~= nil
 local SHIELD_DISPLAY_ITEM = "armor_stand_arms:shield_display"
-local TRIDENT_DISPLAY_ITEM = "armor_stand_arms:trident_display"
 
 core.register_craftitem(SHIELD_DISPLAY_ITEM, {
 	description = S("Shield (display)"),
 	inventory_image = "armor_stand_arms_shield.png",
-	groups = {not_in_creative_inventory = 1},
-})
-
--- Display-only stand-in for a trident held on a VoxeLibre stand. Its tall
--- wield_image makes the trident show upright, the way Mineclonia's own
--- trident does (VoxeLibre's trident has no such wield_image of its own).
-core.register_craftitem(TRIDENT_DISPLAY_ITEM, {
-	description = S("Trident (display)"),
-	inventory_image = "armor_stand_arms_trident.png",
-	wield_image = "armor_stand_arms_trident.png",
 	groups = {not_in_creative_inventory = 1},
 })
 
@@ -44,10 +33,11 @@ core.register_craftitem(TRIDENT_DISPLAY_ITEM, {
 -- register_on_release to track a right-mouse charge-and-release action on
 -- the player's currently wielded item; taking the item out of the player's
 -- hand mid-click (as putting it in the stand does) desyncs that tracking
--- and can error. Tridents are an exception: they can also be thrown, but on
--- Mineclonia the trident carries no weapon_ranged group and displays nicely,
--- so they are allowed here as well (VoxeLibre's trident does carry
--- weapon_ranged, hence the explicit trident exemption below).
+-- and can error. Tridents are an exception: they can also be thrown, but a
+-- plain node right-click (placing on the stand) doesn't trigger the throw
+-- charge, so they are safe. Mineclonia's trident carries no weapon_ranged
+-- group anyway; VoxeLibre's does, hence the explicit trident exemption
+-- below. Both display with their own item art.
 local HANDS = {
 	main = {
 		list = "hand",
@@ -162,19 +152,11 @@ local function item_staticdata(slot, pos)
 end
 
 -- Which item name to actually render for a slot's stack. Normally the
--- stack's own item, but on VoxeLibre we substitute bundled display items:
--- the shield slot always shows the flat shield icon, and a trident in the
--- weapon slot shows the upright trident image (see IS_VOXELIBRE above).
+-- stack's own item, but on VoxeLibre the shield slot shows the bundled flat
+-- shield icon in place of that game's angled one (see IS_VOXELIBRE above).
 local function display_item_name(slot, stack)
-	if not IS_VOXELIBRE then
-		return stack:get_name()
-	end
-	if slot == "off" then
+	if slot == "off" and IS_VOXELIBRE then
 		return SHIELD_DISPLAY_ITEM
-	end
-	local def = stack:get_definition()
-	if def and (def.groups or {}).trident and def.groups.trident > 0 then
-		return TRIDENT_DISPLAY_ITEM
 	end
 	return stack:get_name()
 end

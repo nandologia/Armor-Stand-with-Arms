@@ -35,8 +35,7 @@ sides to make the arms.
 - **Put armor on it** — hold a helmet, chestplate, leggings, or boots and
   use them on the stand, exactly like the normal armor stand.
 - **Give it a weapon** — hold a melee weapon (sword, axe, mace, trident…)
-  and use it on the stand. The weapon appears in its right hand. Tridents
-  stand upright, just like a trident does in your own hand.
+  and use it on the stand. The weapon appears in its right hand.
 - **Give it a shield** — hold a shield and use it on the stand. The shield
   appears on its other arm.
 - Other items are handed back — the stand only takes armor, melee weapons,
@@ -79,8 +78,6 @@ it (the stand model is the same in Mineclonia and VoxeLibre):
 - `tools/gen_shield_texture.py` — copies Mineclonia's flat shield icon,
   used in place of VoxeLibre's own shield icon (which is drawn at an angle
   and looks skewed when shown flat on the stand's arm).
-- `tools/gen_trident_texture.py` — slices Mineclonia's upright trident
-  wield image, used so tridents stand upright on VoxeLibre stands too.
 - `tools/test_load.py` — loads `init.lua` under a stub API (via `lupa`) and
   checks the placing/taking/rotating/dropping logic without launching the
   game.
