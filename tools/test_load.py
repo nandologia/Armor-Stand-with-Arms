@@ -35,6 +35,7 @@ vector = {
         return vnew(x or 0, y or 0, z or 0)
     end,
     add = function(a, b) return vnew(a.x+b.x, a.y+b.y, a.z+b.z) end,
+    subtract = function(a, b) return vnew(a.x-b.x, a.y-b.y, a.z-b.z) end,
     offset = function(v, x, y, z) return vnew(v.x+x, v.y+y, v.z+z) end,
     round = function(v)
         return vnew(math.floor(v.x+0.5), math.floor(v.y+0.5), math.floor(v.z+0.5))
@@ -127,7 +128,10 @@ local function poskey(p) return p.x .. "," .. p.y .. "," .. p.z end
 
 local registered_nodes, registered_entities, registered_lbms, registered_crafts = {}, {}, {}, {}
 
-local face_pos_y = 0.5 -- what pointed_thing_to_face_pos reports (test-tunable)
+-- what pointed_thing_to_face_pos reports (test-tunable): y is the height
+-- band, x is the sideways offset from the node center (world frame)
+local face_pos_y = 0.5
+local face_pos_x = 0
 
 -- This harness simulates running under VoxeLibre: vl_weaponry (spears) is
 -- present, matching how the mod detects IS_VOXELIBRE at load time.
@@ -163,7 +167,7 @@ core = {
     end,
     dir_to_yaw = function(dir) return math.atan(-dir.x, dir.z) end,
     pointed_thing_to_face_pos = function(clicker, pt)
-        return vnew(pt.above.x, pt.under.y + face_pos_y, pt.above.z)
+        return vnew(pt.above.x + face_pos_x, pt.under.y + face_pos_y, pt.above.z)
     end,
     pos_to_string = function(p) return "(" .. p.x .. "," .. p.y .. "," .. p.z .. ")" end,
     string_to_pos = function(s)
@@ -358,7 +362,57 @@ check("weapon size unaffected by the VoxeLibre shield boost",
 check("weapon and shield on opposite arms (mirrored x)",
     (sword_obj._pos.x - pos.x) * (shield_obj._pos.x - pos.x) < 0)
 
--- 4. screwdriver rotate moves BOTH item entities
+-- 4. positional takes (stand still facing param2 = 0, so the harness's
+-- face_pos_x maps 1:1 onto the stand-local sideways coordinate).
+-- 4a. center click over an EMPTY torso slot with both hands full: armor
+-- path only, hands must be left alone (regression: the old "empty piece
+-- takes the weapon" fallback is gone)
+player._wielded = ItemStack()
+face_pos_y = 0.5
+face_pos_x = 0
+ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
+check("center click over empty torso returns nothing", ret == nil or ret:is_empty())
+check("center click leaves the weapon in place", inv:get_stack("hand", 1):get_name() == "mcl_tools:sword_iron")
+check("center click leaves the shield in place", inv:get_stack("offhand", 1):get_name() == "mcl_shields:shield")
+
+-- 4b. center click over an equipped torso piece with both hands full:
+-- takes the ARMOR, not a held item (the reported annoyance, inverted)
+inv:set_stack("armor", 3, ItemStack("mcl_armor:helmet_iron")) -- torso index = 3
+armor_calls = {}
+ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
+check("center click takes the armor piece", ret:get_name() == "mcl_armor:helmet_iron")
+check("armor slot cleared", inv:get_stack("armor", 3):is_empty())
+check("on_unequip fired", armor_calls[1] == "unequip:mcl_armor:helmet_iron")
+check("armor take leaves the weapon in place", inv:get_stack("hand", 1):get_name() == "mcl_tools:sword_iron")
+
+-- 4c. click on the weapon side -> takes the weapon directly
+face_pos_x = -0.3
+ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
+check("weapon-side click takes the weapon", ret:get_name() == "mcl_tools:sword_iron")
+check("hand slot empty after weapon take", inv:get_stack("hand", 1):is_empty())
+check("weapon entity removed, shield remains", live("armor_stand_arms:item_entity") == 1)
+
+-- 4d. weapon side again while that hand is empty: falls through to the
+-- armor logic without touching the shield
+ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
+check("empty weapon-side click leaves the shield alone",
+    inv:get_stack("offhand", 1):get_name() == "mcl_shields:shield")
+
+-- 4e. click on the shield side -> takes the shield directly
+face_pos_x = 0.3
+ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
+check("shield-side click takes the shield", ret:get_name() == "mcl_shields:shield")
+check("offhand slot empty after shield take", inv:get_stack("offhand", 1):is_empty())
+check("all item entities removed", live("armor_stand_arms:item_entity") == 0)
+face_pos_x = 0
+
+-- 5. re-equip both hands, then screwdriver rotate moves BOTH item entities
+player._wielded = ItemStack("mcl_tools:sword_iron")
+nodedef.on_rightclick(pos, node, player, ItemStack("mcl_tools:sword_iron"), pt)
+player._wielded = ItemStack("mcl_shields:shield")
+nodedef.on_rightclick(pos, node, player, ItemStack("mcl_shields:shield"), pt)
+sword_obj = item_entity_for("main")
+shield_obj = item_entity_for("off")
 local old_sword = vnew(sword_obj._pos.x, sword_obj._pos.y, sword_obj._pos.z)
 local old_shield = vnew(shield_obj._pos.x, shield_obj._pos.y, shield_obj._pos.z)
 check("on_rotate handled", nodedef.on_rotate(pos, {name = NODE, param2 = 0}, nil, screwdriver.ROTATE_FACE) == true)
@@ -366,28 +420,13 @@ node = nodes[poskey(pos)]
 check("param2 rotated", node.param2 == 1)
 check("weapon moved with rotation", not vector.equals(sword_obj._pos, old_sword))
 check("shield moved with rotation", not vector.equals(shield_obj._pos, old_shield))
-
--- 5. empty hand at bare torso height -> takes WEAPON first
-player._wielded = ItemStack()
-face_pos_y = 0.5 -- torso band, no armor there
-ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
-check("took weapon first", ret:get_name() == "mcl_tools:sword_iron")
-check("hand slot empty again", inv:get_stack("hand", 1):is_empty())
-check("weapon entity removed, shield remains", live("armor_stand_arms:item_entity") == 1)
-
--- 6. empty hand again -> takes the SHIELD next
-ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
-check("took shield next", ret:get_name() == "mcl_shields:shield")
-check("offhand slot empty again", inv:get_stack("offhand", 1):is_empty())
-check("all item entities removed", live("armor_stand_arms:item_entity") == 0)
-
--- 7. empty hand over a torso piece -> unequips it via mcl_armor.on_unequip
-inv:set_stack("armor", 3, ItemStack("mcl_armor:helmet_iron")) -- torso index = 3
-armor_calls = {}
-ret = nodedef.on_rightclick(pos, node, player, ItemStack(), pt)
-check("took the armor piece", ret:get_name() == "mcl_armor:helmet_iron")
-check("armor slot cleared", inv:get_stack("armor", 3):is_empty())
-check("on_unequip fired", armor_calls[1] == "unequip:mcl_armor:helmet_iron")
+-- empty the hands again for the following scenarios (zone math against
+-- the mocked face position is only meaningful at param2 = 0)
+inv:set_stack("hand", 1, "")
+inv:set_stack("offhand", 1, "")
+update_all_displays_via_lbm = registered_lbms[1]
+update_all_displays_via_lbm.action(pos, node)
+check("hands emptied for later scenarios", live("armor_stand_arms:item_entity") == 0)
 
 -- 8. helmet routes to mcl_armor.equip
 armor_calls = {}
@@ -448,6 +487,33 @@ local ok2, ret2_or_err = pcall(nodedef.on_rightclick, pos3, node3, player, ItemS
 check("nil pointed_thing + empty hand does not crash", ok2)
 check("hammer left untouched (no face info to act on)",
     inv3:get_stack("hand", 1):get_name() == "vl_weaponry:hammer_iron")
+
+-- 12. Mineclonia path: reload without vl_weaponry -> both held items are
+-- rendered 10% smaller, and the shield shows its own (real) icon
+INSTALLED_MODS.vl_weaponry = nil
+dofile(INIT_PATH)
+nodedef = registered_nodes[NODE]
+local pos4 = vnew(40, 5, 40)
+nodes[poskey(pos4)] = {name = NODE, param2 = 0}
+nodedef.on_construct(pos4)
+local inv4 = core.get_meta(pos4):get_inventory()
+inv4:set_stack("hand", 1, ItemStack("mcl_tools:sword_iron"))
+inv4:set_stack("offhand", 1, ItemStack("mcl_shields:shield"))
+registered_lbms[#registered_lbms].action(pos4, nodes[poskey(pos4)])
+local mcl_sword, mcl_shield
+for _, o in ipairs(objects) do
+    local le = o:get_luaentity()
+    if not o._removed and le.name == "armor_stand_arms:item_entity"
+            and le.node_pos and vector.equals(le.node_pos, pos4) then
+        if le.slot == "main" then mcl_sword = o else mcl_shield = o end
+    end
+end
+check("Mineclonia weapon 10% smaller (0.27 * 0.9)",
+    math.abs(mcl_sword._properties.visual_size.x - 0.27 * 0.9) < 1e-9)
+check("Mineclonia shield 10% smaller, no VoxeLibre boost (0.34 * 0.9)",
+    math.abs(mcl_shield._properties.visual_size.x - 0.34 * 0.9) < 1e-9)
+check("Mineclonia shield shows the real shield icon",
+    mcl_shield._properties.textures[1] == "mcl_shields:shield")
 
 return #checks
 """

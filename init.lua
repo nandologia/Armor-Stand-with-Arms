@@ -59,19 +59,32 @@ local HANDS = {
 		scale = 0.34,
 	},
 }
--- Order in which an empty-hand take pulls items off the stand.
+-- Order in which hand slots are tried when placing an item.
 local HAND_ORDER = {"main", "off"}
+
+-- Empty-hand takes are positional: a click whose face position lies more
+-- than this far sideways from the stand's center line (in the stand's own
+-- frame) targets the hand on that side instead of the armor. The arms
+-- start 0.25 out; the held items float around 0.33.
+local HAND_TAKE_ZONE = 0.22
 
 -- The VoxeLibre shield display renders visibly smaller than a real
 -- (Mineclonia) shield at the same visual_size, so it gets its own size
 -- multiplier on top of HANDS.off.scale. Starting guess per user feedback;
 -- tune this number like any other value in HANDS.
 local VOXELIBRE_SHIELD_SCALE_MULT = 1.5
+-- On Mineclonia both held items render 10% smaller (user-tuned; the HANDS
+-- scales themselves stay the VoxeLibre-tuned values).
+local MINECLONIA_SCALE_MULT = 0.9
 
 local function effective_scale(slot)
 	local scale = HANDS[slot].scale
-	if slot == "off" and IS_VOXELIBRE then
-		scale = scale * VOXELIBRE_SHIELD_SCALE_MULT
+	if IS_VOXELIBRE then
+		if slot == "off" then
+			scale = scale * VOXELIBRE_SHIELD_SCALE_MULT
+		end
+	else
+		scale = scale * MINECLONIA_SCALE_MULT
 	end
 	return scale
 end
@@ -226,7 +239,7 @@ core.register_node(NODE_NAME, {
 	description = S("Armor Stand with Arms"),
 	_tt_help = S("Displays armor, holds a weapon and a shield"),
 	_doc_items_longdesc = S("An armor stand with arms is a decorative object which can display different pieces of armor. It can also hold a weapon in one hand and a shield in the other."),
-	_doc_items_usagehelp = S("Place an armor item on the armor stand to equip it. Use a weapon on it to put the weapon in its hand, or a shield to put the shield in its other hand; other items are not accepted. To take something back, select your hand and use the place key on the armor stand: pointing at a piece of armor takes that piece, pointing at a bare spot takes a held item (weapon first, then shield)."),
+	_doc_items_usagehelp = S("Place an armor item on the armor stand to equip it. Use a weapon on it to put the weapon in its hand, or a shield to put the shield in its other hand; other items are not accepted. To take something back, select your hand and use the place key on the armor stand: point at the weapon or the shield to take it, or at a piece of armor to take that piece."),
 	drawtype = "mesh",
 	mesh = "armor_stand_arms.obj",
 	inventory_image = "armor_stand_arms_item.png",
@@ -290,7 +303,32 @@ core.register_node(NODE_NAME, {
 			--    armor stand
 			local above = vector.new(ax, py, az)
 			pointed_thing = { type = "node", under = (pos - above) * 0.75 + pos, above = above}
-			local pointed_fpos = core.pointed_thing_to_face_pos(clicker, pointed_thing).y - py
+			local fpos = core.pointed_thing_to_face_pos(clicker, pointed_thing)
+			local pointed_fpos = fpos.y - py
+
+			-- Pointing at an arm (sideways of the torso column, in the
+			-- stand's own frame) takes that hand's item directly: the
+			-- weapon hangs on the negative-x side, the shield on the
+			-- positive-x side (matching HAND_OFFSET signs).
+			if pointed_fpos > 0 then
+				local lx = vector.rotate(vector.subtract(fpos, pos),
+					vector.new(0, -stand_yaw(node), 0)).x
+				local zone_slot
+				if lx < -HAND_TAKE_ZONE then
+					zone_slot = "main"
+				elseif lx > HAND_TAKE_ZONE then
+					zone_slot = "off"
+				end
+				if zone_slot then
+					local held = inv:get_stack(HANDS[zone_slot].list, 1)
+					if not held:is_empty() then
+						inv:set_stack(HANDS[zone_slot].list, 1, "")
+						update_slot_display(pos, node, zone_slot)
+						return held
+					end
+				end
+			end
+
 			local pointed_piece_index
 
 			if pointed_fpos > 0.9375 then
@@ -303,20 +341,10 @@ core.register_node(NODE_NAME, {
 				pointed_piece_index = mcl_armor.elements.feet.index
 			end
 
-			-- If the pointed piece has no armor, take a held item
-			-- (weapon first, then shield) if there is one; otherwise
-			-- try again from the bottom with more margins to find a
-			-- piece in a location that would otherwise be covered.
+			-- If the pointed piece has no armor, try again from the
+			-- bottom with more margins to find a piece in a location
+			-- that would otherwise be covered.
 			if not stand_has_piece(pos, pointed_piece_index) then
-				for _, slot in ipairs(HAND_ORDER) do
-					local held = inv:get_stack(HANDS[slot].list, 1)
-					if not held:is_empty() then
-						inv:set_stack(HANDS[slot].list, 1, "")
-						update_slot_display(pos, node, slot)
-						return held
-					end
-				end
-
 				if pointed_fpos > 0.9375 + 1/16 then
 					pointed_piece_index = mcl_armor.elements.head.index
 				elseif pointed_fpos > 0.3125 + 4/16 then

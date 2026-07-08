@@ -41,8 +41,8 @@ sides to make the arms.
 - Other items (blocks, food, tools) are handed back — the stand only takes
   armor, weapons, and shields.
 - **Take things back** — with an empty hand, use the place key on the stand.
-  Aim at a piece of armor to take that piece; aim at an empty spot to take
-  the weapon first, then the shield.
+  Aim at the weapon or the shield to take it, or at a piece of armor to
+  take that piece.
 - **Turn it** — use a screwdriver to rotate the stand; the weapon and shield
   turn with it.
 - Break the stand and everything it was holding drops on the ground.
