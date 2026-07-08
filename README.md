@@ -35,13 +35,10 @@ sides to make the arms.
 
 - **Put armor on it** — hold a helmet, chestplate, leggings, or boots and
   use them on the stand, exactly like the normal armor stand.
-- **Give it a weapon** — hold a melee weapon (sword, axe, mace, trident…)
+- **Give it a weapon** — hold a melee weapon (sword, mace, or trident in MCL; sword, hammer, or trident in VL)
   and use it on the stand. The weapon appears in its right hand.
 - **Give it a shield** — hold a shield and use it on the stand. The shield
   appears on its other arm.
-- Other items are handed back — the stand only takes armor, melee weapons,
-  and shields. Charge-up ranged weapons (bows, crossbows, spears) are not
-  accepted, since they behave oddly when taken out of your hand mid-use.
 - **Take things back** — with an empty hand, use the place key on the stand.
   Aim at the weapon or the shield to take it, or at a piece of armor to
   take that piece.
