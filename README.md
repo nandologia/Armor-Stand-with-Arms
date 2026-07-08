@@ -38,7 +38,7 @@ sides to make the arms.
 - **Give it a weapon** — hold a melee weapon (sword, mace, or trident in MCL; sword, hammer, or trident in VL)
   and use it on the stand. The weapon appears in its right hand.
 - **Give it a shield** — hold a shield and use it on the stand. The shield
-  appears on its other arm.
+  appears on its other arm. (Only regular shield supported. Planned update: support for shields customized with banners)
 - **Take things back** — with an empty hand, use the place key on the stand.
   Aim at the weapon or the shield to take it, or at a piece of armor to
   take that piece.
