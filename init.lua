@@ -62,6 +62,20 @@ local HANDS = {
 -- Order in which an empty-hand take pulls items off the stand.
 local HAND_ORDER = {"main", "off"}
 
+-- The VoxeLibre shield display renders visibly smaller than a real
+-- (Mineclonia) shield at the same visual_size, so it gets its own size
+-- multiplier on top of HANDS.off.scale. Starting guess per user feedback;
+-- tune this number like any other value in HANDS.
+local VOXELIBRE_SHIELD_SCALE_MULT = 1.5
+
+local function effective_scale(slot)
+	local scale = HANDS[slot].scale
+	if slot == "off" and IS_VOXELIBRE then
+		scale = scale * VOXELIBRE_SHIELD_SCALE_MULT
+	end
+	return scale
+end
+
 local function stand_yaw(node)
 	return core.dir_to_yaw(core.facedir_to_dir(node.param2))
 end
@@ -417,7 +431,8 @@ core.register_entity("armor_stand_arms:item_entity", {
 			self.object:remove()
 			return
 		end
-		self.object:set_properties({visual_size = {x = hand.scale, y = hand.scale}})
+		local scale = effective_scale(self.slot)
+		self.object:set_properties({visual_size = {x = scale, y = scale}})
 		self:set_item(display_item_name(self.slot, stack))
 		self:update_pose(node)
 	end,

@@ -348,6 +348,10 @@ check("shield entity is in the off slot", shield_obj ~= nil)
 -- of the real shield's own (skewed) icon -- see IS_VOXELIBRE in init.lua
 check("shield entity shows the VoxeLibre display icon, not the raw shield",
     shield_obj._properties.textures[1] == "armor_stand_arms:shield_display")
+check("VoxeLibre shield rendered 50% bigger than its base scale",
+    math.abs(shield_obj._properties.visual_size.x - 0.34 * 1.5) < 1e-9)
+check("weapon size unaffected by the VoxeLibre shield boost",
+    math.abs(sword_obj._properties.visual_size.x - 0.27) < 1e-9)
 check("weapon and shield on opposite arms (mirrored x)",
     (sword_obj._pos.x - pos.x) * (shield_obj._pos.x - pos.x) < 0)
 
