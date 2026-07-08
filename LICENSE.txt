@@ -46,6 +46,12 @@ icon (mcl_shields:mcl_shield_48.png), also CC BY-SA 3.0. It is shown on
 VoxeLibre stands in place of that game's own shield icon, which is drawn at
 an angle and looks skewed when displayed flat on the stand's arm.
 
+armor_stand_arms_trident.png is a vertical slice of Mineclonia's trident
+entity texture (mcl_tridents:mcl_tridents_trident_entity.png), also
+CC BY-SA 3.0 — the same slice Mineclonia itself uses for the trident's
+upright wield image. It is shown on VoxeLibre stands so a held trident
+stands upright there too, as it does on Mineclonia.
+
 At runtime the mod also displays Mineclonia's own armor-stand body model
 (3d_armor_entity.obj); that file is provided by Mineclonia/VoxeLibre and is
 not redistributed here.

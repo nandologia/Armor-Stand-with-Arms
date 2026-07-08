@@ -66,6 +66,10 @@ local registered_items = {
     -- a plain melee weapon like VoxeLibre's hammer: weapon group, no
     -- shield/weapon_ranged -- should be ACCEPTED like a sword
     ["vl_weaponry:hammer_iron"] = {groups = {weapon = 1, hammer = 1}},
+    -- tridents: allowed even with weapon_ranged. VoxeLibre's carries
+    -- weapon_ranged (+ spear); Mineclonia's does not.
+    ["vl_tridents:trident"] = {groups = {weapon = 1, weapon_ranged = 1, trident = 1, spear = 2}},
+    ["mcl_tridents:trident"] = {groups = {weapon = 1, trident = 1}},
 }
 local StackMeta
 local function ItemStack(init)
@@ -255,6 +259,7 @@ check("node registered", nodedef ~= nil)
 check("armor entity registered", registered_entities["armor_stand_arms:armor_entity"] ~= nil)
 check("item entity registered", registered_entities["armor_stand_arms:item_entity"] ~= nil)
 check("shield display craftitem registered", registered_items["armor_stand_arms:shield_display"] ~= nil)
+check("trident display craftitem registered", registered_items["armor_stand_arms:trident_display"] ~= nil)
 check("craft registered", #registered_crafts == 1)
 check("recipe is 7 sticks + slab", (function()
     local r = registered_crafts[1].recipe
@@ -341,6 +346,24 @@ ret = nodedef.on_rightclick(pos, node, player, ItemStack("vl_weaponry:spear_iron
 check("spear rejected (returned unchanged)", ret:get_name() == "vl_weaponry:spear_iron")
 check("hand still holds the sword after spear attempt",
     inv:get_stack("hand", 1):get_name() == "mcl_tools:sword_iron")
+
+-- 2c. a trident IS accepted even though it carries weapon_ranged, and on
+-- VoxeLibre it displays via the bundled upright trident image
+inv:set_stack("hand", 1, "")
+update_all_displays_via_lbm = registered_lbms[1]
+update_all_displays_via_lbm.action(pos, node)
+player._wielded = ItemStack("vl_tridents:trident")
+ret = nodedef.on_rightclick(pos, node, player, ItemStack("vl_tridents:trident"), pt)
+check("VoxeLibre trident accepted into the weapon hand",
+    inv:get_stack("hand", 1):get_name() == "vl_tridents:trident")
+check("trident returns empty (swap of an empty hand)", ret:is_empty())
+local trident_obj = item_entity_for("main")
+check("trident shows the upright display image, not the raw item",
+    trident_obj._properties.textures[1] == "armor_stand_arms:trident_display")
+-- reset the hand back to the sword for the scenarios that follow
+inv:set_stack("hand", 1, ItemStack("mcl_tools:sword_iron"))
+update_all_displays_via_lbm.action(pos, node)
+sword_obj = item_entity_for("main")
 
 -- 3. shield -> goes into the OFF hand, second entity spawns
 player._wielded = ItemStack("mcl_shields:shield")
@@ -514,6 +537,26 @@ check("Mineclonia shield 10% smaller, no VoxeLibre boost (0.34 * 0.9)",
     math.abs(mcl_shield._properties.visual_size.x - 0.34 * 0.9) < 1e-9)
 check("Mineclonia shield shows the real shield icon",
     mcl_shield._properties.textures[1] == "mcl_shields:shield")
+
+-- 12b. Mineclonia trident (no weapon_ranged) is accepted and shows its OWN
+-- item, not the display stand-in (that substitution is VoxeLibre-only)
+inv4:set_stack("hand", 1, "")
+inv4:set_stack("offhand", 1, "")
+registered_lbms[#registered_lbms].action(pos4, nodes[poskey(pos4)])
+player._wielded = ItemStack("mcl_tridents:trident")
+ret = nodedef.on_rightclick(pos4, nodes[poskey(pos4)], player, ItemStack("mcl_tridents:trident"),
+    {type = "node", under = pos4, above = vnew(40, 5, 41)})
+check("Mineclonia trident accepted", inv4:get_stack("hand", 1):get_name() == "mcl_tridents:trident")
+local mcl_trident
+for _, o in ipairs(objects) do
+    local le = o:get_luaentity()
+    if not o._removed and le.name == "armor_stand_arms:item_entity"
+            and le.slot == "main" and le.node_pos and vector.equals(le.node_pos, pos4) then
+        mcl_trident = o
+    end
+end
+check("Mineclonia trident shows its own item, not the display stand-in",
+    mcl_trident._properties.textures[1] == "mcl_tridents:trident")
 
 return #checks
 """
