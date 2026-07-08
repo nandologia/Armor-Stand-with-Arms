@@ -62,6 +62,9 @@ local registered_items = {
     -- on the player's wielded item, which taking it away mid-click desyncs
     ["mcl_bows:bow"] = {groups = {weapon = 1, weapon_ranged = 1, bow = 1}},
     ["vl_weaponry:spear_iron"] = {groups = {weapon = 1, weapon_ranged = 1, spear = 1}},
+    -- a plain melee weapon like VoxeLibre's hammer: weapon group, no
+    -- shield/weapon_ranged -- should be ACCEPTED like a sword
+    ["vl_weaponry:hammer_iron"] = {groups = {weapon = 1, hammer = 1}},
 }
 local StackMeta
 local function ItemStack(init)
@@ -412,6 +415,39 @@ check("drops include weapon", dropped:match("sword_iron") ~= nil)
 check("drops include shield", dropped:match("shield") ~= nil)
 check("drops include armor", dropped:match("helmet_iron") ~= nil)
 check("all item entities removed on destruct", live("armor_stand_arms:item_entity") == 0)
+
+-- 11. a fresh stand: hammer acceptance + the nil pointed_thing crash.
+-- Some weapons (VoxeLibre's bow) forward a click to the pointed node's
+-- on_rightclick with a nil pointed_thing (only 4 args passed through);
+-- this must not crash, regardless of what's wielded or in-hand.
+local pos3 = vnew(30, 5, 30)
+nodes[poskey(pos3)] = {name = NODE, param2 = 0}
+nodedef.on_construct(pos3)
+local node3 = nodes[poskey(pos3)]
+local inv3 = core.get_meta(pos3):get_inventory()
+
+player._wielded = ItemStack("vl_weaponry:hammer_iron")
+ret = nodedef.on_rightclick(pos3, node3, player, ItemStack("vl_weaponry:hammer_iron"), pt)
+check("hammer accepted like any other melee weapon",
+    inv3:get_stack("hand", 1):get_name() == "vl_weaponry:hammer_iron")
+check("empty stack returned for the accepted hammer", ret:is_empty())
+
+-- nil pointed_thing while wielding a rejected ranged weapon (the exact
+-- reported crash): must not error, and must fall through to rejection
+player._wielded = ItemStack("mcl_bows:bow")
+local ok, ret_or_err = pcall(nodedef.on_rightclick, pos3, node3, player, ItemStack("mcl_bows:bow"), nil)
+check("nil pointed_thing + rejected weapon does not crash", ok)
+check("bow still rejected with nil pointed_thing", ok and ret_or_err:get_name() == "mcl_bows:bow")
+check("hammer still in hand, untouched by the bow attempt",
+    inv3:get_stack("hand", 1):get_name() == "vl_weaponry:hammer_iron")
+
+-- nil pointed_thing with an empty hand (a "take" attempt gone through the
+-- same broken forwarding path): must not error either
+player._wielded = ItemStack()
+local ok2, ret2_or_err = pcall(nodedef.on_rightclick, pos3, node3, player, ItemStack(), nil)
+check("nil pointed_thing + empty hand does not crash", ok2)
+check("hammer left untouched (no face info to act on)",
+    inv3:get_stack("hand", 1):get_name() == "vl_weaponry:hammer_iron")
 
 return #checks
 """

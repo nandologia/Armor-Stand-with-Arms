@@ -264,9 +264,18 @@ core.register_node(NODE_NAME, {
 
 		local stand_entity = get_stand_entity(pos, node).object
 		local inv = init_inventory(pos)
-		local px, py, pz, ax, az = pos.x, pos.y, pos.z, pointed_thing.above.x, pointed_thing.above.z
-		-- try to take armor or a held item if pointing at side face
-		if clicker:get_wielded_item():get_name() == "" and (px ~= ax or pz ~= az) then
+		-- try to take armor or a held item if pointing at side face.
+		-- pointed_thing can be nil here: some weapons (e.g. VoxeLibre's
+		-- bow) forward an unrelated click to the pointed node's
+		-- on_rightclick without passing it through. Treat that the same
+		-- as "not pointing at a specific face" and fall through to the
+		-- placing logic below.
+		local px, py, pz = pos.x, pos.y, pos.z
+		local ax, az
+		if pointed_thing then
+			ax, az = pointed_thing.above.x, pointed_thing.above.z
+		end
+		if pointed_thing and clicker:get_wielded_item():get_name() == "" and (px ~= ax or pz ~= az) then
 			-- try to determine pointed armor element by preparing
 			-- pointed_thing for core.pointed_thing_to_face_pos:
 			--
