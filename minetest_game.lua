@@ -399,9 +399,10 @@ core.register_craft({
 	}
 })
 
--- This stand once shipped as a separate mod named armor_stand_arms_minetest;
--- keep worlds from that era working (skipped if the old mod is still
--- installed, so the two never fight over the name)
+-- Early on, this stand existed as a separate mod named
+-- armor_stand_arms_minetest (never released on ContentDB, but available on
+-- GitHub). Migrate any nodes placed under that name (skipped if the old mod
+-- is still installed, so the two never fight over the name).
 if not core.get_modpath("armor_stand_arms_minetest") then
 	core.register_alias("armor_stand_arms_minetest:armor_stand", NODE_NAME)
 end

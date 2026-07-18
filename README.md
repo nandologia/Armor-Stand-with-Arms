@@ -70,9 +70,7 @@ recipe, plus extra sticks down the sides to make the arms.
   a chat message tells you what to install.
 
 The mod detects the game by itself and loads the matching version; the
-stand is named `armor_stand_arms:armor_stand` everywhere. (Worlds that used
-the old separate `armor_stand_arms_minetest` mod are migrated automatically
-through a node alias.)
+stand is named `armor_stand_arms:armor_stand` everywhere.
 
 ## Credits & license
 
