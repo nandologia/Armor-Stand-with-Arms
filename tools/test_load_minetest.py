@@ -105,20 +105,30 @@ local function poskey(p) return p.x .. "," .. p.y .. "," .. p.z end
 local registered_nodes, registered_entities, registered_lbms, registered_crafts = {}, {}, {}, {}
 
 local aliases = {}
+-- Minetest Game with 3d_armor installed (a later scenario removes 3d_armor
+-- to exercise the mod's soft-fail path)
+local INSTALLED_MODS = {["default"] = true, ["3d_armor"] = true,
+    ["3d_armor_stand"] = true, ["shields"] = true}
+local join_callbacks, chat_msgs = {}, {}
+local node_reg_count = 0
 
 core = {
     get_current_modname = function() return "armor_stand_arms" end,
     get_translator = function() return function(s) return s end end,
-    -- Minetest Game with 3d_armor installed; the mod's own path must be
-    -- real, init.lua dofiles minetest_game.lua from it
+    -- the mod's own path must be real, init.lua dofiles the game file from it
     get_modpath = function(name)
         if name == "armor_stand_arms" then return MOD_ROOT end
-        local present = {["default"] = true, ["3d_armor"] = true,
-            ["3d_armor_stand"] = true, ["shields"] = true}
-        return present[name] and ("/mods/" .. name) or nil
+        return INSTALLED_MODS[name] and ("/mods/" .. name) or nil
     end,
     register_alias = function(old, new) aliases[old] = new end,
-    register_node = function(name, def) registered_nodes[name] = def end,
+    register_on_joinplayer = function(fn) join_callbacks[#join_callbacks+1] = fn end,
+    after = function(_, fn) fn() end,
+    chat_send_player = function(name, msg) chat_msgs[#chat_msgs+1] = msg end,
+    colorize = function(_, str) return str end,
+    register_node = function(name, def)
+        registered_nodes[name] = def
+        node_reg_count = node_reg_count + 1
+    end,
     register_entity = function(name, def) registered_entities[name] = def end,
     register_lbm = function(def) registered_lbms[#registered_lbms+1] = def end,
     register_craft = function(def) registered_crafts[#registered_crafts+1] = def end,
@@ -337,6 +347,20 @@ core.get_meta(pos2):get_inventory():set_stack("hand", 1, ItemStack("default:axe_
 registered_lbms[1].action(pos2)
 check("LBM spawns armor entity", live("armor_stand_arms:armor_entity") == 1)
 check("LBM spawns hand item entity", live("armor_stand_arms:item_entity") == 1)
+
+-- Minetest Game WITHOUT 3d_armor: the mod must not crash the world.
+-- It registers nothing and instead tells joining players what to install.
+INSTALLED_MODS["3d_armor"] = nil
+INSTALLED_MODS["3d_armor_stand"] = nil
+INSTALLED_MODS["shields"] = nil
+local regs_before = node_reg_count
+dofile(INIT_PATH)
+check("no 3d_armor: loads without error, registers no nodes",
+    node_reg_count == regs_before)
+check("no 3d_armor: join-time warning registered", #join_callbacks == 1)
+join_callbacks[1]({get_player_name = function() return "newplayer" end})
+check("no 3d_armor: chat message names the missing modpack",
+    #chat_msgs == 1 and chat_msgs[1]:find("3d_armor") ~= nil)
 
 return #checks
 """

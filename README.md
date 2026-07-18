@@ -65,7 +65,9 @@ recipe, plus extra sticks down the sides to make the arms.
 - On **Minetest Game**: the
   [3d_armor](https://content.luanti.org/packages/stu/3d_armor/) modpack —
   the mod that adds wearable armor (and its armor stand). Its `shields`
-  part is needed if you want the stand to hold shields.
+  part is needed if you want the stand to hold shields. If 3d_armor is
+  missing, your world still loads fine — the stand just stays inactive and
+  a chat message tells you what to install.
 
 The mod detects the game by itself and loads the matching version; the
 stand is named `armor_stand_arms:armor_stand` everywhere. (Worlds that used
