@@ -139,12 +139,17 @@ local face_pos_x = 0
 
 -- This harness simulates running under VoxeLibre: vl_weaponry (spears) is
 -- present, matching how the mod detects IS_VOXELIBRE at load time.
-local INSTALLED_MODS = {vl_weaponry = true}
+-- mcl_armor_stand routes init.lua's game dispatch to the mcl.lua path.
+local INSTALLED_MODS = {vl_weaponry = true, mcl_armor_stand = true}
 
 core = {
     get_current_modname = function() return "armor_stand_arms" end,
     get_translator = function() return function(s) return s end end,
-    get_modpath = function(name) return INSTALLED_MODS[name] and ("/mods/" .. name) or nil end,
+    get_modpath = function(name)
+        -- the mod's own path must be real: init.lua dofiles mcl.lua from it
+        if name == "armor_stand_arms" then return MOD_ROOT end
+        return INSTALLED_MODS[name] and ("/mods/" .. name) or nil
+    end,
     register_node = function(name, def) registered_nodes[name] = def end,
     register_entity = function(name, def) registered_entities[name] = def end,
     register_craftitem = function(name, def) registered_items[name] = def end,
@@ -567,6 +572,7 @@ return #checks
 def main():
     lua = LuaRuntime(unpack_returned_tuples=True)
     lua.globals()["INIT_PATH"] = os.path.abspath(INIT)
+    lua.globals()["MOD_ROOT"] = os.path.abspath(os.path.join(HERE, ".."))
     n = lua.execute(HARNESS)
     print("OK: %d checks passed" % n)
 
